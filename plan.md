@@ -1,123 +1,146 @@
 # plan.md — Portal Dashboard Inspektorat (arsipdigital-inspektorat.com)
 
 ## 1) Objectives
-- Membangun portal dashboard institusi pemerintah yang modern-formal untuk **Inspektorat Kabupaten Rokan Hilir**.
-- Menyediakan **akses terpusat** ke aplikasi: **E-Arsip Irban I, E-Arsip Irban IV, dan KKA**, serta menampilkan Irban II/III/V sebagai **“Segera Hadir”**.
-- Mengamankan akses dengan **Login wajib** (tanpa registrasi mandiri) dan **RBAC 2 role**: **Admin** & **Auditor** (JWT + password hash).
-- Menyediakan **Admin Panel** untuk kelola user, berita/pengumuman (CRUD), statistik ringkas (manual), dan URL subdomain.
+- Menyediakan **Portal Arsip Digital** yang modern-formal untuk **Inspektorat Kabupaten Rokan Hilir** sebagai **akses terpusat** ke aplikasi:
+  - **E-Arsip Irban I** (aktif)
+  - **E-Arsip Irban IV** (aktif)
+  - **KKA (Kertas Kerja Audit)** (aktif)
+  - **Irban II / III / V** ditampilkan sebagai **“Segera Hadir”**
+- Mengamankan akses dengan **Login wajib** (tanpa registrasi mandiri) dan **RBAC 2 role**:
+  - **Admin** (full akses: kelola user, berita, statistik, URL subdomain)
+  - **Auditor** (akses dashboard, lihat berita/statistik, buka menu aplikasi aktif)
+- Menyediakan fitur operasional untuk pengelolaan portal:
+  - **Berita/Pengumuman** (CRUD)
+  - **Statistik ringkas** (manual input; siap untuk integrasi API di masa depan)
+  - **Manajemen tautan subdomain** (editable via UI)
+- Status saat ini: **Portal sudah dibangun full-stack dan lulus E2E testing 100%** (backend 44/44 + verifikasi alur frontend). Siap untuk **user review** dan masuk tahap **polishing/deployment readiness**.
+
+---
 
 ## 2) Implementation Steps
 
-### Phase 1 — Core Build (langsung, tanpa POC terpisah)
-> Aplikasi tergolong CRUD + auth sederhana; fokus membangun core flow end-to-end.
+### Phase 1 — Core Build (langsung, tanpa POC terpisah) ✅ *Completed*
+> Core flow end-to-end telah dibuat dan berjalan stabil.
 
-**User stories (core):**
-1. Sebagai Auditor, saya ingin login agar hanya pengguna internal dapat mengakses portal.
-2. Sebagai Auditor, saya ingin melihat kartu menu E-Arsip dan klik untuk menuju subdomain terkait.
-3. Sebagai Auditor, saya ingin melihat pengumuman terbaru agar mendapat informasi terkini.
-4. Sebagai Admin, saya ingin membuat akun Auditor tanpa fitur registrasi mandiri.
-5. Sebagai Admin, saya ingin mengubah URL subdomain dari panel admin tanpa edit kode.
+**User stories (core) — Completed:**
+1. Auditor dapat login sehingga hanya pengguna internal bisa mengakses portal.
+2. Auditor melihat kartu menu E-Arsip dan membuka subdomain aktif.
+3. Auditor melihat pengumuman terbaru.
+4. Admin membuat akun Auditor tanpa fitur registrasi mandiri.
+5. Admin mengubah URL subdomain dari panel admin tanpa edit kode.
 
-**Backend (FastAPI + MongoDB):**
-- Setup struktur proyek, env, koneksi Mongo.
-- Model/collection: `users`, `news`, `stats`, `links`.
-- Auth:
-  - Password hashing (passlib+bcrypt)
-  - JWT login (access token), middleware/dep `get_current_user`
-  - RBAC: guard admin-only endpoints
-  - Seed default admin: `admin / Admin@2025`
-- API endpoints (MVP):
-  - Auth: `POST /auth/login`, `POST /auth/change-password`
-  - Users (admin): CRUD + reset password
-  - News: list (auditor/admin), CRUD (admin)
-  - Stats: get (all), update (admin)
-  - Links: get (all), update (admin)
+**Backend (FastAPI + MongoDB) — Implemented:**
+- DB collections: `users`, `news`, `stats`, `links`.
+- Auth & Security:
+  - JWT access token
+  - Password hashing (bcrypt)
+  - RBAC guard admin-only endpoints
+  - Seed default accounts:
+    - Admin: `admin / Admin@2025`
+    - Auditor (testing): `auditor / Auditor@2025`
+- API endpoints (delivered):
+  - Auth: `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/change-password`
+  - Users (admin): list/create/update/delete + reset password
+  - News: list/get (authenticated), CRUD (admin)
+  - Stats: get (authenticated), update (admin)
+  - Links: get (authenticated), update (admin)
 
-**Frontend (React + Tailwind + shadcn/ui):**
+**Frontend (React + Tailwind + shadcn/ui) — Implemented:**
 - Routing: `/login`, `/dashboard`, `/admin/*`, `/profile`.
-- Auth state: store JWT (httpOnly cookie bila memungkinkan; jika tidak, localStorage + axios interceptor).
-- UI/Branding:
-  - Header dengan 2 logo (Kab. Rokan Hilir & Inspektorat “Anggaraksa Dharma”)
-  - Tema warna hijau + aksen biru/emas, tipografi formal
-- Dashboard page:
-  - Hero/welcome banner
-  - 4 kartu statistik (manual): Total Surat Masuk, Surat Keluar, Total Arsip, Total Auditor Aktif
-  - Grid menu 6 kartu: Irban I (aktif), II (Segera Hadir), III (Segera Hadir), IV (aktif), V (Segera Hadir), KKA (aktif)
-  - Section Berita/Pengumuman (list ringkas + detail modal/page)
-  - Footer kontak (placeholder terstruktur)
+- Auth state: JWT disimpan di localStorage + axios interceptor + redirect on 401.
+- Branding & UI:
+  - Header menampilkan **2 logo institusi** (Kab. Rokan Hilir + Inspektorat “Anggaraksa Dharma”).
+  - Tema warna **hijau + biru/emas**, tampilan modern-formal, Bahasa Indonesia formal.
+- Dashboard:
+  - Welcome banner personal
+  - 4 KPI statistik
+  - Grid menu 6 kartu (Irban I/II/III/IV/V/KKA) dengan badge **Aktif/Segera Hadir**
+  - News feed + detail dialog
+  - Footer keamanan/kontak
 
-**Checkpoint:** Core flow berjalan: login → dashboard (stats + menu + news) → logout.
+**Checkpoint:** login → dashboard (stats + menu + news) → logout ✅
 
-**Testing (E2E v1):**
-- Jalankan 1 putaran uji end-to-end:
-  - Login admin & auditor
-  - Proteksi route (tanpa token ditolak)
-  - Admin bisa CRUD user/news/stats/links
-  - Auditor hanya baca news/stats & akses menu
+**Testing (E2E v1):** ✅
+- Backend: **44/44** test API pass.
+- Frontend: seluruh alur utama dan RBAC diverifikasi.
 
 ---
 
-### Phase 2 — V1 App Completion (Admin Panel + UX hardening)
+### Phase 2 — V1 App Completion (Admin Panel + UX hardening) ✅ *Completed*
+> Admin panel lengkap telah tersedia dan teruji.
 
-**User stories (v1):**
-1. Sebagai Admin, saya ingin mengelola berita (buat/edit/hapus) dengan editor sederhana.
-2. Sebagai Admin, saya ingin mengelola statistik ringkas agar dashboard selalu up to date.
-3. Sebagai Admin, saya ingin mengelola tautan subdomain agar perubahan domain tidak perlu deploy ulang.
-4. Sebagai Auditor, saya ingin melihat label “Segera Hadir” jelas dan menu non-aktif tidak bisa diklik.
-5. Sebagai pengguna, saya ingin mengganti password sendiri dari halaman profil.
+**User stories (v1) — Completed:**
+1. Admin mengelola berita (buat/edit/hapus) + publikasi.
+2. Admin mengelola statistik ringkas agar dashboard up-to-date.
+3. Admin mengelola tautan subdomain agar perubahan domain tidak perlu deploy ulang.
+4. Auditor melihat label “Segera Hadir” jelas dan menu non-aktif tidak dapat diakses.
+5. Pengguna mengganti password sendiri dari halaman profil.
 
-**Admin Panel (frontend):**
-- Halaman:
-  - Manajemen User (list, create, edit role, reset password, delete)
-  - Manajemen Berita (CRUD)
-  - Manajemen Statistik (edit 4 angka)
-  - Manajemen URL Subdomain (Irban1/2/3/4/5/KKA)
-- UX: loading/empty/error states, toast notification, konfirmasi hapus.
+**Admin Panel (frontend) — Delivered:**
+- `/admin/users`: CRUD user, set role, aktif/nonaktif, reset password
+- `/admin/news`: CRUD berita + publish toggle
+- `/admin/stats`: edit 4 angka KPI
+- `/admin/links`: edit URL subdomain Irban1/2/3/4/5/KKA (URL kosong → tampil “Segera Hadir”)
 
-**Security/Hardening:**
-- CORS ketat ke domain portal.
-- Rate limit login sederhana (opsional MVP) + pesan error generik.
-- Validasi input (Pydantic + frontend forms).
+**Security/Hardening — Implemented (baseline):**
+- Validasi input backend (Pydantic) & frontend (form constraints).
+- Proteksi route frontend:
+  - Auditor tidak bisa akses `/admin/*` (redirect ke dashboard)
+- Proteksi endpoint backend:
+  - Admin-only endpoints mengembalikan 403 untuk auditor
+  - Endpoint protected mengembalikan 401 tanpa token
 
-**Testing (E2E):**
-- Uji peran:
-  - Auditor tidak bisa akses `/admin/*` (403/redirect)
-  - Endpoint admin tidak bisa dipanggil Auditor
-- Uji CRUD:
-  - News create/edit/delete terlihat di dashboard
-  - Update stats/links terefleksi real-time setelah refresh
+**Testing (E2E):** ✅
+- Role-based checks (Admin vs Auditor)
+- CRUD News/Users/Stats/Links terverifikasi dan refleksi UI berjalan.
 
 ---
 
-### Phase 3 — Polishing + Deployment Readiness
+### Phase 3 — Polishing + Deployment Readiness ⏳ *Next*
+> Menunggu masukan user; fokus pada produksi, keamanan lebih ketat, dan perapihan konten.
 
-**User stories (polish):**
-1. Sebagai Auditor, saya ingin tampilan responsif di mobile agar mudah diakses di lapangan.
-2. Sebagai Admin, saya ingin melihat audit trail ringan (siapa update apa) agar perubahan terpantau.
-3. Sebagai pengguna, saya ingin sesi login berakhir otomatis saat token kedaluwarsa.
-4. Sebagai Admin, saya ingin mengganti password admin default setelah login pertama.
-5. Sebagai instansi, saya ingin footer berisi alamat/kontak resmi yang konsisten.
+**User stories (polish) — Proposed:**
+1. Responsif & kenyamanan mobile ditingkatkan (auditor di lapangan).
+2. Admin mendapatkan penguatan keamanan (opsional): pembatasan percobaan login (rate limit) dan audit trail ringan.
+3. Perapihan sesi: UX saat token kedaluwarsa (pesan re-login yang jelas).
+4. Wajibkan perubahan password admin default setelah login pertama (opsional kebijakan).
+5. Footer dan halaman informasi institusi dilengkapi data resmi (alamat, kontak, jam layanan).
 
-**Enhancements (opsional tapi disiapkan):**
-- Audit log minimal untuk update berita/stats/links.
-- Token refresh / expiry handling (atau re-login flow rapi).
-- Konten halaman “Tentang/Profil” singkat.
-- Placeholder siap integrasi API stats dari subdomain (tanpa implement integrasi dulu).
+**Enhancements (opsional):**
+- Audit log minimal untuk perubahan (news/stats/links/users).
+- CORS ketat ke domain portal produksi.
+- Parameterisasi konfigurasi (mis. base URL, CORS origins) untuk produksi.
+- Integrasi statistik otomatis via API dari subdomain (jika subdomain menyediakan endpoint) — *future work*.
 
-**Testing & Regression:**
-- Regression test untuk semua flow utama.
-- Review keamanan dasar (no register, RBAC ketat, hashing ok).
+**Testing & Regression (Phase 3):**
+- Regression test semua flow setelah hardening.
+- Verifikasi UX mobile (viewport test) + aksesibilitas (focus ring, contrast).
+
+---
 
 ## 3) Next Actions
-1. Mulai implementasi backend FastAPI + Mongo: schema, auth JWT, seed admin default.
-2. Implementasi frontend React: login + dashboard (stats/menu/news).
-3. Tambahkan Admin Panel (users/news/stats/links) dan halaman profile.
-4. Lakukan 1 putaran E2E testing dan perbaiki sampai stabil.
+1. **User Review**: konfirmasi UI/brand (logo placement, warna, copy), struktur menu, dan konten footer.
+2. **Keamanan Produksi**:
+   - Set `CORS_ORIGINS` ke domain portal produksi.
+   - Ganti `JWT_SECRET` untuk produksi.
+   - (Opsional) tambah rate limiting login.
+3. **Konten Resmi**:
+   - Lengkapi alamat/kontak resmi Inspektorat untuk footer.
+   - (Opsional) halaman “Tentang/Profil” institusi.
+4. **Polish UI** (jika diperlukan): microcopy, empty states, loading skeleton konsisten.
+5. **Deployment Readiness**: verifikasi environment, backup DB, dan prosedur pembuatan akun auditor oleh admin.
+
+---
 
 ## 4) Success Criteria
+✅ **Sudah tercapai (V1):**
 - Hanya **Admin/Auditor** yang dapat login; tidak ada registrasi mandiri.
-- **RBAC** bekerja: Auditor tidak bisa akses/mengeksekusi aksi admin.
-- Dashboard menampilkan **menu 6 kartu** dengan status aktif/“Segera Hadir” sesuai.
+- **RBAC** berjalan: auditor tidak dapat mengakses admin panel maupun endpoint admin.
+- Dashboard menampilkan **6 kartu menu** dengan status **Aktif/Segera Hadir** sesuai.
 - Admin dapat **CRUD berita**, update **statistik**, dan ubah **URL subdomain** via UI.
-- UI sesuai gaya **modern-formal pemerintah**, bahasa **Indonesia formal**, menampilkan **2 logo** dengan rapi.
-- Semua flow utama lulus **E2E test** tanpa error kritis.
+- UI **modern-formal pemerintah** (Bahasa Indonesia formal) + menampilkan **2 logo** dengan rapi.
+- Lulus **E2E test** tanpa bug kritis: backend **44/44** pass + alur frontend tervalidasi.
+
+⏳ **Target tambahan (Phase 3):**
+- Hardening produksi (CORS ketat, secret produksi, opsional rate limit/audit log).
+- Konten institusional lengkap dan siap digunakan publik internal.
