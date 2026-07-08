@@ -1,6 +1,7 @@
 // Central branding constants for the Portal Arsip Digital Inspektorat Kab. Rokan Hilir.
-export const LOGO_KAB_ROHIL = 'https://customer-assets.emergentagent.com/job_7602cb6f-b30e-488c-857a-a60584520d65/artifacts/l5pcey77_Picture1.png';
-export const LOGO_INSPEKTORAT = 'https://customer-assets.emergentagent.com/job_7602cb6f-b30e-488c-857a-a60584520d65/artifacts/wm8j4xsp_INSPEKTORAT%20LOGO.jpg';
+// Logos are served from /public/assets and have been pre-processed to have transparent backgrounds.
+export const LOGO_KAB_ROHIL = '/assets/rokan-hilir-logo.png';
+export const LOGO_INSPEKTORAT = '/assets/inspektorat-logo.png';
 
 export const PORTAL_NAME = 'Portal Arsip Digital';
 export const INSTITUTION_NAME = 'Inspektorat Kabupaten Rokan Hilir';
