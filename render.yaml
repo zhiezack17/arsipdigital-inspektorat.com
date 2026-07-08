@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: arsipdigital-backend
+    runtime: python
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn server:app --host 0.0.0.0 --port $PORT
+    plan: free
+    region: singapore
+    env: python
+    pythonVersion: 3.11
+    envVars:
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        value: arsipdigital
+      - key: JWT_SECRET
+        sync: false
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+  - type: static_site
+    name: arsipdigital-frontend
+    runtime: node
+    buildCommand: cd frontend && yarn install && yarn build
+    staticPublishPath: frontend/build
+    plan: free
+    region: singapore
+    envVars:
+      - key: REACT_APP_BACKEND_URL
+        fromService:
+          name: arsipdigital-backend
+          property: url
+
+envGroups:
+  - name: Production
+    envVars:
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        value: arsipdigital
+      - key: JWT_SECRET
+        sync: false
+      - key: REACT_APP_BACKEND_URL
+        sync: false
