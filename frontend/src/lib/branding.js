@@ -6,6 +6,13 @@ export const LOGO_INSPEKTORAT = '/assets/inspektorat-logo.png';
 export const PORTAL_NAME = 'Portal Arsip Digital';
 export const INSTITUTION_NAME = 'Inspektorat Kabupaten Rokan Hilir';
 export const INSTITUTION_TAGLINE = 'Anggaraksa Dharma';
+export const GOVERNMENT_NAME = 'PEMERINTAH KABUPATEN ROKAN HILIR';
+export const INSTITUTION_FULL_NAME = 'INSPEKTORAT DAERAH';
+
+// Public contact info displayed on top-bar & footer.
+export const CONTACT_PHONE = '0852 65 740 588';
+export const CONTACT_EMAIL = 'info@arsipdigital-inspektorat.com';
+export const CONTACT_ADDRESS = 'Kabupaten Rokan Hilir, Provinsi Riau';
 
 export const APP_MENU = [
     {
