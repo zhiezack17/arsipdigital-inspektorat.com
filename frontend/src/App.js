@@ -13,6 +13,9 @@ import AdminUsersPage from '@/pages/admin/AdminUsers';
 import AdminNewsPage from '@/pages/admin/AdminNews';
 import AdminStatsPage from '@/pages/admin/AdminStats';
 import AdminLinksPage from '@/pages/admin/AdminLinks';
+import PublicHomePage from '@/pages/PublicHome';
+import PublicNewsListPage from '@/pages/PublicNewsList';
+import PublicNewsDetailPage from '@/pages/PublicNewsDetail';
 
 function App() {
     return (
@@ -20,9 +23,14 @@ function App() {
             <AuthProvider>
                 <BrowserRouter>
                     <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                        {/* Public routes — no login required */}
+                        <Route path="/" element={<PublicHomePage />} />
+                        <Route path="/berita" element={<PublicNewsListPage />} />
+                        <Route path="/berita/:slug" element={<PublicNewsDetailPage />} />
+
                         <Route path="/login" element={<LoginPage />} />
 
+                        {/* Protected internal routes */}
                         <Route
                             path="/dashboard"
                             element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
@@ -43,7 +51,7 @@ function App() {
                             <Route path="links" element={<AdminLinksPage />} />
                         </Route>
 
-                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </BrowserRouter>
                 <Toaster position="top-right" richColors closeButton />

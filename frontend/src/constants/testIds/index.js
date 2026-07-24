@@ -71,3 +71,16 @@ export const PROFILE = {
     confirmPassword: 'profile-confirm-password-input',
     saveButton: 'profile-save-password-button',
 };
+
+export const PUBLIC = {
+    heroSection: 'public-hero-section',
+    loginCta: 'public-login-cta',
+    portalCta: 'public-portal-cta',
+    newsSection: 'public-news-section',
+    newsCard: 'public-news-card',
+    newsListItem: 'public-news-list-item',
+    newsReadMoreLink: 'public-news-read-more',
+    newsDetailTitle: 'public-news-detail-title',
+    newsDetailContent: 'public-news-detail-content',
+    newsDetailBack: 'public-news-detail-back',
+};
