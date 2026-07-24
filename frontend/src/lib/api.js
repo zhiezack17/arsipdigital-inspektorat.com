@@ -8,6 +8,12 @@ export const api = axios.create({
     timeout: 20000,
 });
 
+// Unauthenticated API instance for public endpoints (no token injection, no 401 redirect)
+export const publicApi = axios.create({
+    baseURL: API_BASE,
+    timeout: 20000,
+});
+
 const TOKEN_KEY = 'arsip_inspektorat_token';
 
 export const getToken = () => {

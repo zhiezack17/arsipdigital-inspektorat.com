@@ -9,6 +9,8 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import re
+import unicodedata
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Literal
@@ -94,6 +96,32 @@ def decode_token(token: str) -> dict:
     return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
 
+# ---------------- Slug utilities ----------------
+def slugify(text: str) -> str:
+    """Convert a title string to a URL-safe slug."""
+    text = unicodedata.normalize('NFKD', text)
+    text = text.encode('ascii', 'ignore').decode('ascii').lower()
+    text = re.sub(r'[^a-z0-9]+', '-', text)
+    text = text.strip('-')
+    return text or 'berita'
+
+
+async def generate_unique_slug(title: str, exclude_id: Optional[str] = None) -> str:
+    """Generate a slug from title, ensuring uniqueness in the news collection."""
+    base = slugify(title)
+    slug = base
+    counter = 2
+    while True:
+        query: dict = {"slug": slug}
+        if exclude_id:
+            query["id"] = {"$ne": exclude_id}
+        existing = await db.news.find_one(query)
+        if not existing:
+            return slug
+        slug = f"{base}-{counter}"
+        counter += 1
+
+
 # ---------------- Models ----------------
 Role = Literal['admin', 'auditor']
 
@@ -144,6 +172,7 @@ class ResetPasswordPayload(BaseModel):
 class News(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    slug: Optional[str] = None
     title: str
     content: str
     category: Optional[str] = 'Pengumuman'
@@ -158,6 +187,17 @@ class NewsPayload(BaseModel):
     content: str = Field(min_length=3)
     category: Optional[str] = 'Pengumuman'
     is_published: bool = True
+
+
+class PublicNews(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    slug: str
+    title: str
+    content: str
+    category: Optional[str] = 'Pengumuman'
+    author: Optional[str] = None
+    created_at: Optional[str] = None
 
 
 class Stats(BaseModel):
@@ -285,6 +325,7 @@ async def ensure_defaults():
         sample = [
             {
                 "id": str(uuid.uuid4()),
+                "slug": "selamat-datang-portal-arsip-digital-inspektorat",
                 "title": "Selamat Datang di Portal Arsip Digital Inspektorat",
                 "content": "Portal ini merupakan pusat akses aplikasi E-Arsip Inspektorat Kabupaten Rokan Hilir. Silakan gunakan menu di bawah untuk mengakses aplikasi E-Arsip Irban dan KKA sesuai kebutuhan Anda.",
                 "category": "Pengumuman",
@@ -295,6 +336,7 @@ async def ensure_defaults():
             },
             {
                 "id": str(uuid.uuid4()),
+                "slug": "menu-e-arsip-irban-ii-iii-v-segera-hadir",
                 "title": "Menu E-Arsip Irban II, III, dan V Segera Hadir",
                 "content": "Kami sedang mempersiapkan aplikasi E-Arsip untuk Irban II, III, dan V. Aplikasi akan tersedia dalam waktu dekat. Terima kasih atas kesabaran Anda.",
                 "category": "Informasi",
@@ -306,6 +348,12 @@ async def ensure_defaults():
         ]
         await db.news.insert_many(sample)
         logger.info("Seeded sample news.")
+
+    # Backfill slugs for existing news that don't have one
+    async for doc in db.news.find({"slug": {"$exists": False}}):
+        slug = await generate_unique_slug(doc.get('title', ''), exclude_id=doc.get('id'))
+        await db.news.update_one({"id": doc['id']}, {"$set": {"slug": slug}})
+        logger.info(f"Backfilled slug '{slug}' for news id={doc.get('id')}")
 
 
 @app.on_event("startup")
@@ -445,8 +493,11 @@ async def get_news(news_id: str, _: dict = Depends(get_current_user)):
 
 @api_router.post("/news", response_model=News)
 async def create_news(payload: NewsPayload, current: dict = Depends(require_admin)):
+    news_id = str(uuid.uuid4())
+    slug = await generate_unique_slug(payload.title)
     new_news = {
-        "id": str(uuid.uuid4()),
+        "id": news_id,
+        "slug": slug,
         "title": payload.title.strip(),
         "content": payload.content.strip(),
         "category": (payload.category or "Pengumuman").strip(),
@@ -465,6 +516,9 @@ async def update_news(news_id: str, payload: NewsPayload, _: dict = Depends(requ
     if not doc:
         raise HTTPException(status_code=404, detail="Berita tidak ditemukan")
     updates = payload.model_dump()
+    # Preserve existing slug; only generate if the document has none
+    if not doc.get('slug'):
+        updates['slug'] = await generate_unique_slug(payload.title, exclude_id=news_id)
     updates['updated_at'] = iso(now_utc())
     await db.news.update_one({"id": news_id}, {"$set": updates})
     updated = await db.news.find_one({"id": news_id})
@@ -477,6 +531,23 @@ async def delete_news(news_id: str, _: dict = Depends(require_admin)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Berita tidak ditemukan")
     return {"message": "Berita berhasil dihapus"}
+
+
+# ---------------- Public News (no auth) ----------------
+@api_router.get("/public/news", response_model=List[PublicNews])
+async def list_public_news():
+    """Return published news items for public consumption — no authentication required."""
+    docs = await db.news.find({"is_published": True, "slug": {"$exists": True}}).sort("created_at", -1).to_list(100)
+    return [PublicNews(**serialize_doc(d)) for d in docs]
+
+
+@api_router.get("/public/news/{slug}", response_model=PublicNews)
+async def get_public_news(slug: str):
+    """Return a single published news item by slug — no authentication required."""
+    doc = await db.news.find_one({"slug": slug, "is_published": True})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Berita tidak ditemukan")
+    return PublicNews(**serialize_doc(doc))
 
 
 # ---------------- Stats ----------------
