@@ -31,10 +31,7 @@ export default function PublicNewsDetailPage() {
         setLoading(true);
         publicApi.get(`/public/news/${encodeURIComponent(slug)}`)
             .then(({ data }) => setItem(data))
-            .catch((err) => {
-                if (err?.response?.status === 404) setNotFound(true);
-                else setNotFound(true);
-            })
+            .catch(() => setNotFound(true))
             .finally(() => setLoading(false));
     }, [slug]);
 

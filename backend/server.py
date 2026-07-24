@@ -98,7 +98,13 @@ def decode_token(token: str) -> dict:
 
 # ---------------- Slug utilities ----------------
 def slugify(text: str) -> str:
-    """Convert a title string to a URL-safe slug."""
+    """Convert a title string to a URL-safe slug.
+
+    Uses NFKD normalization to transliterate accented characters (é→e, ö→o, etc.)
+    before stripping non-ASCII bytes. This works well for Indonesian text, which is
+    primarily Latin-based. Pure non-Latin scripts would be stripped entirely; add a
+    transliteration library if those are expected in titles.
+    """
     text = unicodedata.normalize('NFKD', text)
     text = text.encode('ascii', 'ignore').decode('ascii').lower()
     text = re.sub(r'[^a-z0-9]+', '-', text)
