@@ -2,10 +2,11 @@
 Portal Arsip Digital Inspektorat Kab. Rokan Hilir - Backend API.
 FastAPI + MongoDB + JWT authentication.
 """
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.staticfiles import StaticFiles
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -38,6 +39,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+UPLOAD_DIR = ROOT_DIR / "uploads"
+UPLOAD_NEWS_DIR = UPLOAD_DIR / "news"
+UPLOAD_NEWS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 
 # ---------------- Utility helpers ----------------
@@ -182,6 +188,8 @@ class News(BaseModel):
     title: str
     content: str
     category: Optional[str] = 'Pengumuman'
+    image_url: Optional[str] = None
+    is_featured: bool = False
     is_published: bool = True
     author: Optional[str] = None
     created_at: Optional[str] = None
@@ -192,6 +200,8 @@ class NewsPayload(BaseModel):
     title: str = Field(min_length=3, max_length=200)
     content: str = Field(min_length=3)
     category: Optional[str] = 'Pengumuman'
+    image_url: Optional[str] = None
+    is_featured: bool = False
     is_published: bool = True
 
 
@@ -202,6 +212,8 @@ class PublicNews(BaseModel):
     title: str
     content: str
     category: Optional[str] = 'Pengumuman'
+    image_url: Optional[str] = None
+    is_featured: bool = False
     author: Optional[str] = None
     created_at: Optional[str] = None
 
@@ -489,6 +501,42 @@ async def list_news(_: dict = Depends(get_current_user)):
     return [News(**serialize_doc(d)) for d in docs]
 
 
+
+@api_router.post("/news-image")
+async def upload_news_image(
+    image: UploadFile = File(...),
+    _: dict = Depends(require_admin),
+):
+    allowed_types = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+    }
+
+    extension = allowed_types.get(image.content_type or "")
+    if not extension:
+        raise HTTPException(
+            status_code=400,
+            detail="Format gambar harus JPG, PNG, atau WEBP",
+        )
+
+    content = await image.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=400,
+            detail="Ukuran gambar maksimal 5 MB",
+        )
+
+    filename = f"{uuid.uuid4().hex}{extension}"
+    destination = UPLOAD_NEWS_DIR / filename
+    destination.write_bytes(content)
+
+    return {
+        "image_url": f"/api/uploads/news/{filename}",
+        "filename": filename,
+    }
+
+
 @api_router.get("/news/{news_id}", response_model=News)
 async def get_news(news_id: str, _: dict = Depends(get_current_user)):
     doc = await db.news.find_one({"id": news_id})
@@ -507,11 +555,16 @@ async def create_news(payload: NewsPayload, current: dict = Depends(require_admi
         "title": payload.title.strip(),
         "content": payload.content.strip(),
         "category": (payload.category or "Pengumuman").strip(),
+        "image_url": payload.image_url,
+        "is_featured": payload.is_featured,
         "is_published": payload.is_published,
         "author": current.get('full_name') or current.get('username'),
         "created_at": iso(now_utc()),
         "updated_at": iso(now_utc()),
     }
+    if payload.is_featured:
+        await db.news.update_many({}, {"$set": {"is_featured": False}})
+
     await db.news.insert_one(new_news)
     return News(**serialize_doc(new_news))
 
@@ -522,6 +575,13 @@ async def update_news(news_id: str, payload: NewsPayload, _: dict = Depends(requ
     if not doc:
         raise HTTPException(status_code=404, detail="Berita tidak ditemukan")
     updates = payload.model_dump()
+
+    if payload.is_featured:
+        await db.news.update_many(
+            {"id": {"$ne": news_id}},
+            {"$set": {"is_featured": False}},
+        )
+
     # Preserve existing slug; only generate if the document has none
     if not doc.get('slug'):
         updates['slug'] = await generate_unique_slug(payload.title, exclude_id=news_id)
