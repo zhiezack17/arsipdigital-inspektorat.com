@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { publicApi } from '@/lib/api';
 import {
     LOGO_KAB_ROHIL, FOTO_KANTOR, KKA_URL,
     IRBAN_1_URL, IRBAN_2_URL, IRBAN_3_URL, IRBAN_4_URL, IRBAN_5_URL,
