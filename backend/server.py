@@ -329,10 +329,10 @@ async def ensure_defaults():
         await db.links.insert_one({
             "key": "global",
             "irban_1": "https://irban1.arsipdigital-inspektorat.com",
-            "irban_2": "",
-            "irban_3": "",
+            "irban_2": "https://irban2.arsipdigital-inspektorat.com",
+            "irban_3": "https://irban3.arsipdigital-inspektorat.com",
             "irban_4": "https://irban4.arsipdigital-inspektorat.com",
-            "irban_5": "",
+            "irban_5": "https://irban5.arsipdigital-inspektorat.com",
             "kka": "https://kka.arsipdigital-inspektorat.com",
             "updated_at": iso(now_utc()),
         })

@@ -1,7 +1,7 @@
-// Central branding constants for the Portal Arsip Digital Inspektorat Kab. Rokan Hilir.
-// Logos are served from /public/assets and have been pre-processed to have transparent backgrounds.
+// Logos & Media served from /public/assets
 export const LOGO_KAB_ROHIL = '/assets/rokan-hilir-logo.png';
 export const LOGO_INSPEKTORAT = '/assets/inspektorat-logo.png';
+export const FOTO_KANTOR = '/assets/foto-kantor-inspektorat.png';
 
 export const PORTAL_NAME = 'Portal Arsip Digital';
 export const INSTITUTION_NAME = 'Inspektorat Kabupaten Rokan Hilir';
@@ -17,7 +17,10 @@ export const CONTACT_ADDRESS = 'Kabupaten Rokan Hilir, Provinsi Riau';
 // Public URLs for external ecosystem applications
 export const KKA_URL = 'https://kka.arsipdigital-inspektorat.com';
 export const IRBAN_1_URL = 'https://irban1.arsipdigital-inspektorat.com';
+export const IRBAN_2_URL = 'https://irban2.arsipdigital-inspektorat.com';
+export const IRBAN_3_URL = 'https://irban3.arsipdigital-inspektorat.com';
 export const IRBAN_4_URL = 'https://irban4.arsipdigital-inspektorat.com';
+export const IRBAN_5_URL = 'https://irban5.arsipdigital-inspektorat.com';
 
 export const APP_MENU = [
     {
@@ -41,6 +44,26 @@ export const APP_MENU = [
         url: IRBAN_1_URL,
     },
     {
+        key: 'irban_2',
+        title: 'E-Arsip Irban II',
+        description: 'Arsip digital Inspektur Pembantu Wilayah II',
+        active: true,
+        testId: 'app-card-irban-2',
+        accent: 'green',
+        badge: 'Aktif',
+        url: IRBAN_2_URL,
+    },
+    {
+        key: 'irban_3',
+        title: 'E-Arsip Irban III',
+        description: 'Arsip digital Inspektur Pembantu Wilayah III',
+        active: true,
+        testId: 'app-card-irban-3',
+        accent: 'green',
+        badge: 'Aktif',
+        url: IRBAN_3_URL,
+    },
+    {
         key: 'irban_4',
         title: 'E-Arsip Irban IV',
         description: 'Arsip digital Inspektur Pembantu Wilayah IV',
@@ -51,34 +74,15 @@ export const APP_MENU = [
         url: IRBAN_4_URL,
     },
     {
-        key: 'irban_2',
-        title: 'E-Arsip Irban II',
-        description: 'Arsip digital Inspektur Pembantu Wilayah II',
-        active: false,
-        testId: 'app-card-irban-2',
-        accent: 'green',
-        badge: 'Segera Hadir',
-        url: '',
-    },
-    {
-        key: 'irban_3',
-        title: 'E-Arsip Irban III',
-        description: 'Arsip digital Inspektur Pembantu Wilayah III',
-        active: false,
-        testId: 'app-card-irban-3',
-        accent: 'green',
-        badge: 'Segera Hadir',
-        url: '',
-    },
-    {
         key: 'irban_5',
         title: 'E-Arsip Irban V',
         description: 'Arsip digital Inspektur Pembantu Wilayah V',
-        active: false,
+        active: true,
         testId: 'app-card-irban-5',
         accent: 'green',
-        badge: 'Segera Hadir',
-        url: '',
+        badge: 'Aktif',
+        url: IRBAN_5_URL,
     },
 ];
+
 

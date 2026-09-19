@@ -11,10 +11,10 @@ import { Link2, Save, Loader2, ExternalLink } from 'lucide-react';
 
 const LINK_FIELDS = [
     { key: 'irban_1', label: 'E-Arsip Irban I', placeholder: 'https://irban1.arsipdigital-inspektorat.com' },
-    { key: 'irban_2', label: 'E-Arsip Irban II', placeholder: 'Kosongkan jika belum tersedia' },
-    { key: 'irban_3', label: 'E-Arsip Irban III', placeholder: 'Kosongkan jika belum tersedia' },
+    { key: 'irban_2', label: 'E-Arsip Irban II', placeholder: 'https://irban2.arsipdigital-inspektorat.com' },
+    { key: 'irban_3', label: 'E-Arsip Irban III', placeholder: 'https://irban3.arsipdigital-inspektorat.com' },
     { key: 'irban_4', label: 'E-Arsip Irban IV', placeholder: 'https://irban4.arsipdigital-inspektorat.com' },
-    { key: 'irban_5', label: 'E-Arsip Irban V', placeholder: 'Kosongkan jika belum tersedia' },
+    { key: 'irban_5', label: 'E-Arsip Irban V', placeholder: 'https://irban5.arsipdigital-inspektorat.com' },
     { key: 'kka', label: 'KKA — Kertas Kerja Audit', placeholder: 'https://kka.arsipdigital-inspektorat.com' },
 ];
 

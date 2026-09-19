@@ -10,8 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { publicApi } from '@/lib/api';
-import { LOGO_KAB_ROHIL, KKA_URL, IRBAN_1_URL, IRBAN_4_URL } from '@/lib/branding';
+import {
+    LOGO_KAB_ROHIL, FOTO_KANTOR, KKA_URL,
+    IRBAN_1_URL, IRBAN_2_URL, IRBAN_3_URL, IRBAN_4_URL, IRBAN_5_URL,
+} from '@/lib/branding';
 
 const formatDate = (iso) => {
     if (!iso) return '';
@@ -79,8 +81,13 @@ export default function PublicHomePage() {
     return (
         <PublicLayout>
             <section className="relative isolate overflow-hidden bg-[#063b25] text-white">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(245,196,81,.28),transparent_35%),radial-gradient(circle_at_85%_60%,rgba(255,255,255,.14),transparent_32%)]" />
-                <div className="absolute inset-0 opacity-15" style={{ backgroundImage: 'linear-gradient(120deg, transparent 0 55%, #fff 55% 55.5%, transparent 55.5%)' }} />
+                {/* Background Foto Kantor Inspektorat dengan Overlay Sinematik */}
+                <div 
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat filter brightness-[0.72] contrast-[1.05]"
+                    style={{ backgroundImage: `url(${FOTO_KANTOR})` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#063b25]/95 via-[#063b25]/85 to-[#063b25]/65 backdrop-blur-[0.5px]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(245,196,81,.25),transparent_40%),radial-gradient(circle_at_85%_60%,rgba(0,0,0,.45),transparent_40%)]" />
                 <div className="relative mx-auto grid min-h-[520px] max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.25fr_.75fr] lg:px-8 lg:py-20">
                     <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: .65 }}>
                         <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold tracking-wide backdrop-blur">
@@ -282,96 +289,159 @@ export default function PublicHomePage() {
                         </div>
                     </motion.div>
 
-                    {/* Other Ecosystem Apps Grid */}
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                        <Card className="group relative overflow-hidden p-6 border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                    {/* Other Ecosystem Apps Grid: 5 Irbans + Si-Dumas */}
+                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        <Card className="group relative overflow-hidden p-5 border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                             <div className="flex items-center justify-between">
-                                <span className="rounded-xl bg-emerald-100 p-3 text-emerald-700">
-                                    <FileText className="h-6 w-6" />
+                                <span className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
+                                    <FileText className="h-5 w-5" />
                                 </span>
-                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">Aktif</Badge>
+                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">Aktif</Badge>
                             </div>
-                            <h4 className="mt-4 font-heading text-lg font-bold text-slate-900 group-hover:text-emerald-700 transition">
+                            <h4 className="mt-3.5 font-heading text-base font-bold text-slate-900 group-hover:text-emerald-700 transition">
                                 E-Arsip Irban I
                             </h4>
-                            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                                Sistem pengarsipan digital naskah dinas, PKPT, surat tugas, dan laporan hasil pengawasan Irban Wilayah I.
+                            <p className="mt-1.5 text-xs leading-relaxed text-slate-600 line-clamp-2">
+                                Pengarsipan naskah dinas, PKPT, surat tugas, dan dokumen pengawasan Irban Wilayah I.
                             </p>
-                            <div className="mt-5 pt-4 border-t border-slate-100">
+                            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                                 <a
                                     href={IRBAN_1_URL}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800"
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800"
                                 >
                                     Buka Aplikasi <ArrowUpRight className="h-3.5 w-3.5" />
                                 </a>
+                                <span className="text-[11px] text-slate-400 font-mono">irban1.arsipdigital...</span>
                             </div>
                         </Card>
 
-                        <Card className="group relative overflow-hidden p-6 border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                        <Card className="group relative overflow-hidden p-5 border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                             <div className="flex items-center justify-between">
-                                <span className="rounded-xl bg-emerald-100 p-3 text-emerald-700">
-                                    <FileText className="h-6 w-6" />
+                                <span className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
+                                    <FileText className="h-5 w-5" />
                                 </span>
-                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">Aktif</Badge>
+                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">Aktif</Badge>
                             </div>
-                            <h4 className="mt-4 font-heading text-lg font-bold text-slate-900 group-hover:text-emerald-700 transition">
+                            <h4 className="mt-3.5 font-heading text-base font-bold text-slate-900 group-hover:text-emerald-700 transition">
+                                E-Arsip Irban II
+                            </h4>
+                            <p className="mt-1.5 text-xs leading-relaxed text-slate-600 line-clamp-2">
+                                Sistem pengarsipan digital administrasi pemeriksaan dan laporan pengawasan Irban Wilayah II.
+                            </p>
+                            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                <a
+                                    href={IRBAN_2_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800"
+                                >
+                                    Buka Aplikasi <ArrowUpRight className="h-3.5 w-3.5" />
+                                </a>
+                                <span className="text-[11px] text-slate-400 font-mono">irban2.arsipdigital...</span>
+                            </div>
+                        </Card>
+
+                        <Card className="group relative overflow-hidden p-5 border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                            <div className="flex items-center justify-between">
+                                <span className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
+                                    <FileText className="h-5 w-5" />
+                                </span>
+                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">Aktif</Badge>
+                            </div>
+                            <h4 className="mt-3.5 font-heading text-base font-bold text-slate-900 group-hover:text-emerald-700 transition">
+                                E-Arsip Irban III
+                            </h4>
+                            <p className="mt-1.5 text-xs leading-relaxed text-slate-600 line-clamp-2">
+                                Tata kelola arsip digital pemeriksaan dan pengawasan internal Irban Wilayah III.
+                            </p>
+                            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                <a
+                                    href={IRBAN_3_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800"
+                                >
+                                    Buka Aplikasi <ArrowUpRight className="h-3.5 w-3.5" />
+                                </a>
+                                <span className="text-[11px] text-slate-400 font-mono">irban3.arsipdigital...</span>
+                            </div>
+                        </Card>
+
+                        <Card className="group relative overflow-hidden p-5 border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                            <div className="flex items-center justify-between">
+                                <span className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
+                                    <FileText className="h-5 w-5" />
+                                </span>
+                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">Aktif</Badge>
+                            </div>
+                            <h4 className="mt-3.5 font-heading text-base font-bold text-slate-900 group-hover:text-emerald-700 transition">
                                 E-Arsip Irban IV
                             </h4>
-                            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                                Tata kelola arsip digital pengawasan pemeriksaan, audit khusus, dan naskah dinas Irban Wilayah IV.
+                            <p className="mt-1.5 text-xs leading-relaxed text-slate-600 line-clamp-2">
+                                Tata kelola arsip digital pemeriksaan khusus, investigasi, dan naskah dinas Irban Wilayah IV.
                             </p>
-                            <div className="mt-5 pt-4 border-t border-slate-100">
+                            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                                 <a
                                     href={IRBAN_4_URL}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800"
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800"
                                 >
                                     Buka Aplikasi <ArrowUpRight className="h-3.5 w-3.5" />
                                 </a>
+                                <span className="text-[11px] text-slate-400 font-mono">irban4.arsipdigital...</span>
                             </div>
                         </Card>
 
-                        <Card className="group relative overflow-hidden p-6 border-dashed border-slate-300 bg-slate-50/50">
+                        <Card className="group relative overflow-hidden p-5 border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                             <div className="flex items-center justify-between">
-                                <span className="rounded-xl bg-amber-100 p-3 text-amber-700">
-                                    <Layers className="h-6 w-6" />
+                                <span className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
+                                    <FileText className="h-5 w-5" />
                                 </span>
-                                <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">Tahap Integrasi</Badge>
+                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">Aktif</Badge>
                             </div>
-                            <h4 className="mt-4 font-heading text-lg font-bold text-slate-800">
-                                E-Arsip Irban II, III, & V
+                            <h4 className="mt-3.5 font-heading text-base font-bold text-slate-900 group-hover:text-emerald-700 transition">
+                                E-Arsip Irban V
                             </h4>
-                            <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                                Digitalisasi pengarsipan naskah pengawasan untuk Inspektur Pembantu Wilayah II, III, dan Wilayah V.
+                            <p className="mt-1.5 text-xs leading-relaxed text-slate-600 line-clamp-2">
+                                Sentralisasi arsip digital pengawasan pemeriksaan dan administrasi pengawasan Irban Wilayah V.
                             </p>
-                            <div className="mt-5 pt-4 border-t border-slate-200/60">
-                                <span className="text-xs text-slate-400 italic">Sedang dalam pengembangan</span>
+                            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                <a
+                                    href={IRBAN_5_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800"
+                                >
+                                    Buka Aplikasi <ArrowUpRight className="h-3.5 w-3.5" />
+                                </a>
+                                <span className="text-[11px] text-slate-400 font-mono">irban5.arsipdigital...</span>
                             </div>
                         </Card>
 
-                        <Card className="group relative overflow-hidden p-6 border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                        <Card className="group relative overflow-hidden p-5 border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                             <div className="flex items-center justify-between">
-                                <span className="rounded-xl bg-sky-100 p-3 text-sky-700">
-                                    <ShieldCheck className="h-6 w-6" />
+                                <span className="rounded-xl bg-sky-100 p-2.5 text-sky-700">
+                                    <ShieldCheck className="h-5 w-5" />
                                 </span>
-                                <Badge className="bg-sky-50 text-sky-700 border-sky-200">Layanan Terpadu</Badge>
+                                <Badge className="bg-sky-50 text-sky-700 border-sky-200 text-xs">Layanan Terpadu</Badge>
                             </div>
-                            <h4 className="mt-4 font-heading text-lg font-bold text-slate-900 group-hover:text-sky-700 transition">
+                            <h4 className="mt-3.5 font-heading text-base font-bold text-slate-900 group-hover:text-sky-700 transition">
                                 Si-Dumas & WBS Rohil
                             </h4>
-                            <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                            <p className="mt-1.5 text-xs leading-relaxed text-slate-600 line-clamp-2">
                                 Saluran pengaduan masyarakat, whistleblowing system, dan konsultasi pengawasan internal pemerintah daerah.
                             </p>
-                            <div className="mt-5 pt-4 border-t border-slate-100">
+                            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                                 <Link
                                     to="/berita"
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 hover:text-sky-800"
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-sky-700 hover:text-sky-800"
                                 >
                                     Informasi Layanan <ArrowRight className="h-3.5 w-3.5" />
                                 </Link>
+                                <span className="text-[11px] text-slate-400">Pengaduan Terpadu</span>
                             </div>
                         </Card>
                     </div>

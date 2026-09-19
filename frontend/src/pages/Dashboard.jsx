@@ -221,7 +221,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {APP_MENU.map((item) => (
-                        <MenuCard key={item.key} item={item} url={links?.[item.key]} />
+                        <MenuCard key={item.key} item={item} url={links?.[item.key] || item.url} />
                     ))}
                 </div>
             </section>
