@@ -16,6 +16,8 @@ import AdminLinksPage from '@/pages/admin/AdminLinks';
 import PublicHomePage from '@/pages/PublicHome';
 import PublicNewsListPage from '@/pages/PublicNewsList';
 import PublicNewsDetailPage from '@/pages/PublicNewsDetail';
+import PublicProfilePage from '@/pages/PublicProfile';
+import PublicRegulationsPage from '@/pages/PublicRegulations';
 
 function App() {
     return (
@@ -25,6 +27,8 @@ function App() {
                     <Routes>
                         {/* Public routes — no login required */}
                         <Route path="/" element={<PublicHomePage />} />
+                        <Route path="/profil" element={<PublicProfilePage />} />
+                        <Route path="/regulasi" element={<PublicRegulationsPage />} />
                         <Route path="/berita" element={<PublicNewsListPage />} />
                         <Route path="/berita/:slug" element={<PublicNewsDetailPage />} />
 

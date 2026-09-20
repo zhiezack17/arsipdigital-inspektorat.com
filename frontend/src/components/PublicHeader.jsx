@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Clock, Home, LogIn, Mail, Menu, Newspaper, Phone, X, ExternalLink, Sparkles, Layers } from 'lucide-react';
+import { Clock, Home, LogIn, Mail, Menu, Newspaper, Phone, X, ExternalLink, Sparkles, Layers, Building2, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     CONTACT_EMAIL, CONTACT_PHONE, GOVERNMENT_NAME, INSTITUTION_FULL_NAME,
@@ -55,10 +55,12 @@ export const PublicHeader = () => {
                 <div className="mx-auto hidden max-w-7xl items-center justify-between px-4 sm:px-6 lg:flex lg:px-8">
                     <div className="flex items-center">
                         <NavLink to="/" end className={desktopLink}><Home className="h-4 w-4" />Beranda</NavLink>
+                        <NavLink to="/profil" className={desktopLink}><Building2 className="h-4 w-4" />Profil</NavLink>
+                        <NavLink to="/regulasi" className={desktopLink}><Scale className="h-4 w-4" />Regulasi</NavLink>
                         <a href="/#layanan-apip" className="inline-flex items-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-white/90 hover:bg-[#075a34] hover:text-white transition">
-                            <Layers className="h-4 w-4" />Layanan & Aplikasi APIP
+                            <Layers className="h-4 w-4" />Layanan APIP
                         </a>
-                        <NavLink to="/berita" className={desktopLink}><Newspaper className="h-4 w-4" />Berita & Pengumuman</NavLink>
+                        <NavLink to="/berita" className={desktopLink}><Newspaper className="h-4 w-4" />Berita</NavLink>
                     </div>
                     <div className="flex items-center gap-3">
                         <a
@@ -79,10 +81,12 @@ export const PublicHeader = () => {
                 {open && (
                     <div className="border-t border-white/10 lg:hidden divide-y divide-white/10">
                         <NavLink to="/" end className={mobileLink}><Home className="h-4 w-4" />Beranda</NavLink>
+                        <NavLink to="/profil" className={mobileLink}><Building2 className="h-4 w-4" />Profil</NavLink>
+                        <NavLink to="/regulasi" className={mobileLink}><Scale className="h-4 w-4" />Regulasi</NavLink>
                         <a href="/#layanan-apip" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-white/90 hover:bg-[#075a34]">
-                            <Layers className="h-4 w-4" />Layanan & Aplikasi APIP
+                            <Layers className="h-4 w-4" />Layanan APIP
                         </a>
-                        <NavLink to="/berita" className={mobileLink}><Newspaper className="h-4 w-4" />Berita & Pengumuman</NavLink>
+                        <NavLink to="/berita" className={mobileLink}><Newspaper className="h-4 w-4" />Berita</NavLink>
                         <div className="p-3 bg-[#063b25] flex flex-col gap-2">
                             <a
                                 href={KKA_URL}
