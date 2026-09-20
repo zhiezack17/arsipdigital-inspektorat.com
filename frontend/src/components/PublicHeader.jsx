@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Clock, Home, LogIn, Mail, Menu, Newspaper, Phone, X, ExternalLink, Sparkles, Layers, Building2, Scale } from 'lucide-react';
+import { Clock, Home, LogIn, Mail, Menu, Newspaper, Phone, X, ExternalLink, Sparkles, Layers, Building2, Scale, Images } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     CONTACT_EMAIL, CONTACT_PHONE, GOVERNMENT_NAME, INSTITUTION_FULL_NAME,
@@ -61,6 +61,7 @@ export const PublicHeader = () => {
                             <Layers className="h-4 w-4" />Layanan APIP
                         </a>
                         <NavLink to="/berita" className={desktopLink}><Newspaper className="h-4 w-4" />Berita</NavLink>
+                        <NavLink to="/galeri" className={desktopLink}><Images className="h-4 w-4" />Galeri</NavLink>
                     </div>
                     <div className="flex items-center gap-3">
                         <a
@@ -87,6 +88,7 @@ export const PublicHeader = () => {
                             <Layers className="h-4 w-4" />Layanan APIP
                         </a>
                         <NavLink to="/berita" className={mobileLink}><Newspaper className="h-4 w-4" />Berita</NavLink>
+                        <NavLink to="/galeri" className={mobileLink}><Images className="h-4 w-4" />Galeri</NavLink>
                         <div className="p-3 bg-[#063b25] flex flex-col gap-2">
                             <a
                                 href={KKA_URL}

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
     ArrowRight, ArrowUpRight, CalendarDays, CheckCircle2, ChevronRight, Clock3, ExternalLink, FileText,
     Images, Layers, LogIn, Megaphone, Newspaper, ShieldCheck, Sparkles, Users,
+    Play, FolderOpen, MapPin, X,
 } from 'lucide-react';
 import { PublicLayout } from '@/components/PublicLayout';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,29 @@ const formatDate = (iso) => {
     }
 };
 
+const formatAgendaDate = (iso) => {
+    if (!iso) return { day: '01', month: 'GIAT' };
+    try {
+        const d = new Date(iso);
+        return {
+            day: String(d.getDate()).padStart(2, '0'),
+            month: d.toLocaleDateString('id-ID', { month: 'short' }).toUpperCase(),
+        };
+    } catch {
+        return { day: '01', month: 'GIAT' };
+    }
+};
+
+const formatAgendaTime = (item) => {
+    if (item.start_time && item.end_time) {
+        return `${item.start_time} - ${item.end_time} WIB`;
+    }
+    if (item.start_time) {
+        return `${item.start_time} WIB`;
+    }
+    return 'Sesuai Jadwal';
+};
+
 const excerpt = (value = '', max = 150) => {
     const clean = value.replace(/\s+/g, ' ').trim();
     return clean.length > max ? `${clean.slice(0, max).trim()}…` : clean;
@@ -37,28 +61,36 @@ const fadeUp = {
     visible: { opacity: 1, y: 0 },
 };
 
-const agenda = [
-    { day: '05', month: 'AGU', title: 'Rapat koordinasi pengawasan internal', time: '09.00 WIB' },
-    { day: '12', month: 'AGU', title: 'Evaluasi tindak lanjut hasil pemeriksaan', time: '08.30 WIB' },
-    { day: '21', month: 'AGU', title: 'Sosialisasi pengelolaan arsip digital', time: '10.00 WIB' },
-];
-
-const gallery = [
-    { title: 'Koordinasi Pengawasan', className: 'from-emerald-900 via-emerald-700 to-lime-500' },
-    { title: 'Pembinaan Aparatur', className: 'from-slate-900 via-emerald-800 to-emerald-500' },
-    { title: 'Evaluasi Tindak Lanjut', className: 'from-amber-700 via-emerald-800 to-emerald-950' },
-    { title: 'Pelayanan Informasi', className: 'from-emerald-950 via-teal-700 to-amber-400' },
+const fallbackAgenda = [
+    { id: '1', agenda_date: '2026-08-05', start_time: '09:00', title: 'Rapat koordinasi pengawasan internal', location: 'Kantor Inspektorat' },
+    { id: '2', agenda_date: '2026-08-12', start_time: '08:30', title: 'Evaluasi tindak lanjut hasil pemeriksaan', location: 'Ruang Rapat Utama' },
+    { id: '3', agenda_date: '2026-08-21', start_time: '10:00', title: 'Sosialisasi pengelolaan arsip digital', location: 'Aula Pemkab Rohil' },
 ];
 
 export default function PublicHomePage() {
     const [news, setNews] = useState([]);
+    const [agendaList, setAgendaList] = useState([]);
+    const [mediaList, setMediaList] = useState([]);
+    const [selectedMedia, setSelectedMedia] = useState(null);
     const [loading, setLoading] = useState(true);
     const [heroIndex, setHeroIndex] = useState(0);
 
     useEffect(() => {
-        publicApi.get('/public/news')
-            .then(({ data }) => setNews(data || []))
-            .catch(() => setNews([]))
+        Promise.allSettled([
+            publicApi.get('/public/news'),
+            publicApi.get('/public/agenda'),
+            publicApi.get('/public/media'),
+        ])
+            .then(([newsRes, agendaRes, mediaRes]) => {
+                setNews(newsRes.status === 'fulfilled' ? newsRes.value.data || [] : []);
+                setAgendaList(agendaRes.status === 'fulfilled' ? agendaRes.value.data || [] : []);
+                setMediaList(mediaRes.status === 'fulfilled' ? mediaRes.value.data || [] : []);
+            })
+            .catch(() => {
+                setNews([]);
+                setAgendaList([]);
+                setMediaList([]);
+            })
             .finally(() => setLoading(false));
     }, []);
 
@@ -68,6 +100,12 @@ export default function PublicHomePage() {
         () => news.filter((item) => (item.category || '').toLowerCase().includes('pengumuman')).slice(0, 4),
         [news],
     );
+
+    const gallery = useMemo(() => mediaList.slice(0, 8), [mediaList]);
+    const agenda = useMemo(() => {
+        if (!agendaList.length) return fallbackAgenda;
+        return agendaList.slice(0, 4);
+    }, [agendaList]);
 
     useEffect(() => {
         if (featured.length < 2) return undefined;
@@ -470,7 +508,45 @@ export default function PublicHomePage() {
 
                     <aside className="space-y-6">
                         <Card className="overflow-hidden border-emerald-100"><div className="flex items-center gap-3 bg-emerald-800 px-5 py-4 text-white"><Megaphone className="h-5 w-5 text-[#f5c451]" /><h3 className="font-heading text-lg font-bold">Pengumuman</h3></div><div className="divide-y divide-slate-100">{(announcements.length ? announcements : news.slice(0, 4)).map((item) => <Link key={item.id} to={`/berita/${item.slug}`} className="block p-5 transition hover:bg-emerald-50"><p className="font-semibold leading-snug text-slate-800">{item.title}</p><p className="mt-2 text-xs text-slate-500">{formatDate(item.created_at)}</p></Link>)}</div></Card>
-                        <Card className="overflow-hidden border-slate-200"><div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4"><CalendarDays className="h-5 w-5 text-emerald-700" /><h3 className="font-heading text-lg font-bold text-slate-900">Agenda Kegiatan</h3></div><div className="space-y-1 p-4">{agenda.map((item) => <div key={item.title} className="flex gap-4 rounded-xl p-3 hover:bg-slate-50"><div className="min-w-14 rounded-xl bg-emerald-50 py-2 text-center"><strong className="block text-xl text-emerald-800">{item.day}</strong><span className="text-[10px] font-bold text-emerald-600">{item.month}</span></div><div><p className="text-sm font-semibold text-slate-800">{item.title}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Clock3 className="h-3.5 w-3.5" /> {item.time}</p></div></div>)}</div></Card>
+                        <Card className="overflow-hidden border-slate-200">
+                            <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+                                <CalendarDays className="h-5 w-5 text-emerald-700" />
+                                <h3 className="font-heading text-lg font-bold text-slate-900">Agenda Kegiatan</h3>
+                            </div>
+                            <div className="space-y-1 p-4">
+                                {agenda.length === 0 ? (
+                                    <p className="py-6 text-center text-xs text-slate-500">
+                                        Belum ada agenda kegiatan mendatang.
+                                    </p>
+                                ) : (
+                                    agenda.map((item) => {
+                                        const dateInfo = formatAgendaDate(item.agenda_date);
+                                        const timeInfo = formatAgendaTime(item);
+                                        return (
+                                            <div key={item.id || item.title} className="flex gap-4 rounded-xl p-3 hover:bg-slate-50 transition">
+                                                <div className="min-w-14 rounded-xl bg-emerald-50 py-2 text-center border border-emerald-100/60">
+                                                    <strong className="block text-xl text-emerald-800 font-bold">{dateInfo.day}</strong>
+                                                    <span className="text-[10px] font-bold text-emerald-600 uppercase">{dateInfo.month}</span>
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">{item.title}</p>
+                                                    <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                                                        <Clock3 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                                        <span>{timeInfo}</span>
+                                                    </p>
+                                                    {item.location && (
+                                                        <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400 truncate">
+                                                            <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                                                            <span className="truncate">{item.location}</span>
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </Card>
                     </aside>
                 </div>
             </section>
@@ -493,7 +569,186 @@ export default function PublicHomePage() {
                 </div>
             </section>
 
-            <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"><div className="mb-7 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-700">Dokumentasi</p><h2 className="mt-2 font-heading text-3xl font-bold text-slate-900">Galeri Kegiatan</h2></div><Images className="h-7 w-7 text-emerald-700" /></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{gallery.map((item, index) => <motion.div key={item.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ delay: index * .07 }} className={`group relative min-h-56 overflow-hidden rounded-2xl bg-gradient-to-br ${item.className} p-5 shadow-lg`}><div className="absolute inset-0 bg-black/10 transition group-hover:bg-black/0" /><div className="relative flex h-full min-h-48 items-end"><div><p className="text-xs font-bold uppercase tracking-widest text-white/65">Inspektorat Rohil</p><h3 className="mt-2 font-heading text-xl font-bold text-white">{item.title}</h3></div></div></motion.div>)}</div></section>
+            {/* DOKUMENTASI & GALERI KEGIATAN */}
+            <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+                <div className="mb-7 flex items-end justify-between">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-700">Dokumentasi</p>
+                        <h2 className="mt-2 font-heading text-3xl font-bold text-slate-900">Galeri Kegiatan</h2>
+                        <p className="mt-1 text-sm text-slate-500">Dokumentasi visual pengawasan dan kegiatan resmi Inspektorat Kabupaten Rokan Hilir</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex border-emerald-200 text-emerald-800 hover:bg-emerald-50">
+                            <Link to="/galeri">Lihat Semua Galeri <ArrowRight className="ml-1.5 h-4 w-4" /></Link>
+                        </Button>
+                        <Images className="h-7 w-7 text-emerald-700" />
+                    </div>
+                </div>
+
+                {gallery.length === 0 ? (
+                    <Card className="p-12 text-center text-slate-500 border-dashed border-slate-300">
+                        <Images className="mx-auto h-12 w-12 text-slate-300 mb-3" />
+                        <p className="font-semibold text-slate-700">Belum ada dokumentasi kegiatan</p>
+                        <p className="text-xs text-slate-400 mt-1">Foto dan video kegiatan resmi akan ditampilkan di sini setelah dipublikasikan melalui panel admin.</p>
+                    </Card>
+                ) : (
+                    <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                        {gallery.map((item, index) => (
+                            <motion.button
+                                key={item.id || index}
+                                type="button"
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true }}
+                                variants={fadeUp}
+                                transition={{ delay: index * 0.05 }}
+                                onClick={() => setSelectedMedia(item)}
+                                className="group relative min-h-[250px] overflow-hidden rounded-2xl bg-emerald-950 text-left shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                            >
+                                {item.media_type === 'video' ? (
+                                    item.thumbnail_url ? (
+                                        <img
+                                            src={item.thumbnail_url}
+                                            alt={item.title}
+                                            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                        />
+                                    ) : (
+                                        <video
+                                            src={item.media_url}
+                                            muted
+                                            preload="metadata"
+                                            className="absolute inset-0 h-full w-full object-cover"
+                                        />
+                                    )
+                                ) : (
+                                    <img
+                                        src={item.media_url}
+                                        alt={item.title}
+                                        loading="lazy"
+                                        className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                    />
+                                )}
+
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10 group-hover:via-black/25 transition-all" />
+
+                                {item.media_type === 'video' && (
+                                    <span className="absolute left-1/2 top-1/2 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-emerald-800 shadow-lg group-hover:scale-110 transition">
+                                        <Play className="ml-1 h-5 w-5 fill-current" />
+                                    </span>
+                                )}
+
+                                <div className="absolute inset-x-0 bottom-0 p-4 text-white">
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <span className="inline-block rounded bg-emerald-600/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                                            {item.category || 'Kegiatan'}
+                                        </span>
+                                        {item.event_date && (
+                                            <span className="text-[11px] text-white/75">
+                                                {formatDate(item.event_date)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <h3 className="line-clamp-2 font-heading text-sm sm:text-base font-bold text-white group-hover:text-[#f5c451] transition">
+                                        {item.title}
+                                    </h3>
+                                    {item.location && (
+                                        <p className="mt-1 flex items-center gap-1 text-[11px] text-white/70 truncate">
+                                            <MapPin className="h-3 w-3 shrink-0 text-[#f5c451]" />
+                                            <span className="truncate">{item.location}</span>
+                                        </p>
+                                    )}
+                                </div>
+                            </motion.button>
+                        ))}
+                    </div>
+                )}
+
+                <div className="mt-8 text-center sm:hidden">
+                    <Button asChild variant="outline" className="w-full border-emerald-200 text-emerald-800">
+                        <Link to="/galeri">Lihat Semua Galeri <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    </Button>
+                </div>
+            </section>
+
+            {/* Modal Lightbox Foto / Video */}
+            {selectedMedia && (
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+                    onClick={() => setSelectedMedia(null)}
+                    role="presentation"
+                >
+                    <div
+                        className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-slate-900 shadow-2xl border border-white/10"
+                        onClick={(e) => e.stopPropagation()}
+                        role="presentation"
+                    >
+                        <div className="relative flex items-center justify-center bg-black min-h-[320px] max-h-[70vh]">
+                            {selectedMedia.media_type === 'video' ? (
+                                <video
+                                    src={selectedMedia.media_url}
+                                    controls
+                                    autoPlay
+                                    className="max-h-[70vh] w-full object-contain"
+                                />
+                            ) : (
+                                <img
+                                    src={selectedMedia.media_url}
+                                    alt={selectedMedia.title}
+                                    className="max-h-[70vh] w-full object-contain"
+                                />
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setSelectedMedia(null)}
+                                className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/60 text-white hover:bg-black transition"
+                                aria-label="Tutup"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5">
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-800 border-emerald-200">
+                                        {selectedMedia.category || 'Kegiatan'}
+                                    </Badge>
+                                    {selectedMedia.event_date && (
+                                        <span className="text-xs text-slate-500">
+                                            {formatDate(selectedMedia.event_date)}
+                                        </span>
+                                    )}
+                                </div>
+                                <h3 className="mt-2 font-heading text-lg font-bold text-slate-900 leading-snug">
+                                    {selectedMedia.title}
+                                </h3>
+                                {selectedMedia.location && (
+                                    <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+                                        <MapPin className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
+                                        <span>{selectedMedia.location}</span>
+                                    </p>
+                                )}
+                                {selectedMedia.description && (
+                                    <p className="mt-2 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2">
+                                        {selectedMedia.description}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setSelectedMedia(null)}
+                                >
+                                    Tutup
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </PublicLayout>
     );
 }

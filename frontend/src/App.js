@@ -20,6 +20,7 @@ import PublicNewsListPage from '@/pages/PublicNewsList';
 import PublicNewsDetailPage from '@/pages/PublicNewsDetail';
 import PublicProfilePage from '@/pages/PublicProfile';
 import PublicRegulationsPage from '@/pages/PublicRegulations';
+import PublicGalleryPage from '@/pages/PublicGallery';
 
 function App() {
     return (
@@ -31,6 +32,7 @@ function App() {
                         <Route path="/" element={<PublicHomePage />} />
                         <Route path="/profil" element={<PublicProfilePage />} />
                         <Route path="/regulasi" element={<PublicRegulationsPage />} />
+                        <Route path="/galeri" element={<PublicGalleryPage />} />
                         <Route path="/berita" element={<PublicNewsListPage />} />
                         <Route path="/berita/:slug" element={<PublicNewsDetailPage />} />
 
