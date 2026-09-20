@@ -42,7 +42,11 @@ logger = logging.getLogger(__name__)
 
 UPLOAD_DIR = ROOT_DIR / "uploads"
 UPLOAD_NEWS_DIR = UPLOAD_DIR / "news"
+UPLOAD_MEDIA_DIR = UPLOAD_DIR / "media"
+
 UPLOAD_NEWS_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+
 app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 
@@ -135,7 +139,7 @@ async def generate_unique_slug(title: str, exclude_id: Optional[str] = None) -> 
 
 
 # ---------------- Models ----------------
-Role = Literal['admin', 'auditor']
+Role = Literal['super_admin', 'admin', 'admin_media', 'auditor']
 
 
 class UserPublic(BaseModel):
@@ -218,6 +222,89 @@ class PublicNews(BaseModel):
     created_at: Optional[str] = None
 
 
+class Agenda(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    title: str
+    agenda_date: str
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    location: Optional[str] = None
+    description: Optional[str] = None
+    is_active: bool = True
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class AgendaPayload(BaseModel):
+    title: str = Field(min_length=3, max_length=200)
+    agenda_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    start_time: Optional[str] = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    end_time: Optional[str] = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    location: Optional[str] = None
+    description: Optional[str] = None
+    is_active: bool = True
+
+
+class PublicAgenda(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    title: str
+    agenda_date: str
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    location: Optional[str] = None
+    description: Optional[str] = None
+
+
+class MediaItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    title: str
+    description: Optional[str] = None
+    media_type: str
+    media_url: str
+    thumbnail_url: Optional[str] = None
+    event_date: Optional[str] = None
+    category: Optional[str] = "Kegiatan"
+    location: Optional[str] = None
+    is_featured: bool = False
+    is_published: bool = True
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class MediaPayload(BaseModel):
+    title: str = Field(min_length=3, max_length=200)
+    description: Optional[str] = None
+    media_type: str = Field(pattern=r"^(image|video)$")
+    media_url: str = Field(min_length=1)
+    thumbnail_url: Optional[str] = None
+    event_date: Optional[str] = Field(
+        default=None,
+        pattern=r"^\d{4}-\d{2}-\d{2}$",
+    )
+    category: Optional[str] = "Kegiatan"
+    location: Optional[str] = None
+    is_featured: bool = False
+    is_published: bool = True
+
+
+class PublicMediaItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    title: str
+    description: Optional[str] = None
+    media_type: str
+    media_url: str
+    thumbnail_url: Optional[str] = None
+    event_date: Optional[str] = None
+    category: Optional[str] = "Kegiatan"
+    location: Optional[str] = None
+    is_featured: bool = False
+    created_at: Optional[str] = None
+
+
 class Stats(BaseModel):
     model_config = ConfigDict(extra="ignore")
     total_surat_masuk: int = 0
@@ -273,9 +360,21 @@ async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)) -> dic
     return user
 
 
-async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
-    if current_user.get('role') != 'admin':
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Akses hanya untuk Admin")
+async def require_super_admin(current_user: dict = Depends(get_current_user)) -> dict:
+    if current_user.get("role") not in ["super_admin", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Akses hanya untuk Super Admin",
+        )
+    return current_user
+
+
+async def require_media_admin(current_user: dict = Depends(get_current_user)) -> dict:
+    if current_user.get("role") not in ["super_admin", "admin", "admin_media"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Akses hanya untuk Admin Media",
+        )
     return current_user
 
 
@@ -289,7 +388,7 @@ async def ensure_defaults():
             "username": "admin",
             "full_name": "Administrator",
             "password_hash": hash_password("Admin@2025"),
-            "role": "admin",
+            "role": "super_admin",
             "is_active": True,
             "created_at": iso(now_utc()),
         }
@@ -329,10 +428,10 @@ async def ensure_defaults():
         await db.links.insert_one({
             "key": "global",
             "irban_1": "https://irban1.arsipdigital-inspektorat.com",
-            "irban_2": "https://irban2.arsipdigital-inspektorat.com",
-            "irban_3": "https://irban3.arsipdigital-inspektorat.com",
+            "irban_2": "",
+            "irban_3": "",
             "irban_4": "https://irban4.arsipdigital-inspektorat.com",
-            "irban_5": "https://irban5.arsipdigital-inspektorat.com",
+            "irban_5": "",
             "kka": "https://kka.arsipdigital-inspektorat.com",
             "updated_at": iso(now_utc()),
         })
@@ -430,13 +529,13 @@ async def change_password(payload: ChangePasswordPayload, current_user: dict = D
 
 # ---------------- Users (Admin only) ----------------
 @api_router.get("/users", response_model=List[UserPublic])
-async def list_users(_: dict = Depends(require_admin)):
+async def list_users(_: dict = Depends(require_super_admin)):
     users = await db.users.find({}, {"password_hash": 0}).sort("created_at", -1).to_list(1000)
     return [UserPublic(**serialize_doc(u)) for u in users]
 
 
 @api_router.post("/users", response_model=UserPublic)
-async def create_user(payload: CreateUserPayload, _: dict = Depends(require_admin)):
+async def create_user(payload: CreateUserPayload, _: dict = Depends(require_super_admin)):
     exists = await db.users.find_one({"username": payload.username.strip()})
     if exists:
         raise HTTPException(status_code=400, detail="Nama pengguna sudah digunakan")
@@ -454,7 +553,7 @@ async def create_user(payload: CreateUserPayload, _: dict = Depends(require_admi
 
 
 @api_router.patch("/users/{user_id}", response_model=UserPublic)
-async def update_user(user_id: str, payload: UpdateUserPayload, current: dict = Depends(require_admin)):
+async def update_user(user_id: str, payload: UpdateUserPayload, current: dict = Depends(require_super_admin)):
     user = await db.users.find_one({"id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="Pengguna tidak ditemukan")
@@ -463,7 +562,7 @@ async def update_user(user_id: str, payload: UpdateUserPayload, current: dict = 
     if user_id == current['id']:
         if 'is_active' in updates and updates['is_active'] is False:
             raise HTTPException(status_code=400, detail="Tidak dapat menonaktifkan akun Anda sendiri")
-        if 'role' in updates and updates['role'] != 'admin':
+        if 'role' in updates and updates['role'] != 'super_admin':
             raise HTTPException(status_code=400, detail="Tidak dapat mengubah peran akun Anda sendiri")
     if updates:
         updates['updated_at'] = iso(now_utc())
@@ -473,7 +572,7 @@ async def update_user(user_id: str, payload: UpdateUserPayload, current: dict = 
 
 
 @api_router.post("/users/{user_id}/reset-password")
-async def reset_password(user_id: str, payload: ResetPasswordPayload, _: dict = Depends(require_admin)):
+async def reset_password(user_id: str, payload: ResetPasswordPayload, _: dict = Depends(require_super_admin)):
     user = await db.users.find_one({"id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="Pengguna tidak ditemukan")
@@ -485,7 +584,7 @@ async def reset_password(user_id: str, payload: ResetPasswordPayload, _: dict = 
 
 
 @api_router.delete("/users/{user_id}")
-async def delete_user(user_id: str, current: dict = Depends(require_admin)):
+async def delete_user(user_id: str, current: dict = Depends(require_super_admin)):
     if user_id == current['id']:
         raise HTTPException(status_code=400, detail="Tidak dapat menghapus akun Anda sendiri")
     result = await db.users.delete_one({"id": user_id})
@@ -505,7 +604,7 @@ async def list_news(_: dict = Depends(get_current_user)):
 @api_router.post("/news-image")
 async def upload_news_image(
     image: UploadFile = File(...),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_media_admin),
 ):
     allowed_types = {
         "image/jpeg": ".jpg",
@@ -546,7 +645,7 @@ async def get_news(news_id: str, _: dict = Depends(get_current_user)):
 
 
 @api_router.post("/news", response_model=News)
-async def create_news(payload: NewsPayload, current: dict = Depends(require_admin)):
+async def create_news(payload: NewsPayload, current: dict = Depends(require_media_admin)):
     news_id = str(uuid.uuid4())
     slug = await generate_unique_slug(payload.title)
     new_news = {
@@ -570,7 +669,7 @@ async def create_news(payload: NewsPayload, current: dict = Depends(require_admi
 
 
 @api_router.patch("/news/{news_id}", response_model=News)
-async def update_news(news_id: str, payload: NewsPayload, _: dict = Depends(require_admin)):
+async def update_news(news_id: str, payload: NewsPayload, _: dict = Depends(require_media_admin)):
     doc = await db.news.find_one({"id": news_id})
     if not doc:
         raise HTTPException(status_code=404, detail="Berita tidak ditemukan")
@@ -592,7 +691,7 @@ async def update_news(news_id: str, payload: NewsPayload, _: dict = Depends(requ
 
 
 @api_router.delete("/news/{news_id}")
-async def delete_news(news_id: str, _: dict = Depends(require_admin)):
+async def delete_news(news_id: str, _: dict = Depends(require_media_admin)):
     result = await db.news.delete_one({"id": news_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Berita tidak ditemukan")
@@ -616,6 +715,382 @@ async def get_public_news(slug: str):
     return PublicNews(**serialize_doc(doc))
 
 
+# ---------------- Agenda ----------------
+@api_router.get("/agenda", response_model=List[Agenda])
+async def list_agenda(_: dict = Depends(get_current_user)):
+    docs = await db.agenda.find({}).sort("agenda_date", 1).to_list(500)
+    return [Agenda(**serialize_doc(d)) for d in docs]
+
+
+@api_router.get("/agenda/{agenda_id}", response_model=Agenda)
+async def get_agenda(agenda_id: str, _: dict = Depends(get_current_user)):
+    doc = await db.agenda.find_one({"id": agenda_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Agenda tidak ditemukan")
+    return Agenda(**serialize_doc(doc))
+
+
+@api_router.post("/agenda", response_model=Agenda)
+async def create_agenda(payload: AgendaPayload, _: dict = Depends(require_media_admin)):
+    new_agenda = {
+        "id": str(uuid.uuid4()),
+        "title": payload.title.strip(),
+        "agenda_date": payload.agenda_date,
+        "start_time": payload.start_time,
+        "end_time": payload.end_time,
+        "location": payload.location.strip() if payload.location else None,
+        "description": payload.description.strip() if payload.description else None,
+        "is_active": payload.is_active,
+        "created_at": iso(now_utc()),
+        "updated_at": iso(now_utc()),
+    }
+    await db.agenda.insert_one(new_agenda)
+    return Agenda(**serialize_doc(new_agenda))
+
+
+@api_router.patch("/agenda/{agenda_id}", response_model=Agenda)
+async def update_agenda(
+    agenda_id: str,
+    payload: AgendaPayload,
+    _: dict = Depends(require_media_admin),
+):
+    doc = await db.agenda.find_one({"id": agenda_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Agenda tidak ditemukan")
+
+    updates = payload.model_dump()
+    updates["title"] = payload.title.strip()
+    updates["location"] = payload.location.strip() if payload.location else None
+    updates["description"] = payload.description.strip() if payload.description else None
+    updates["updated_at"] = iso(now_utc())
+
+    await db.agenda.update_one({"id": agenda_id}, {"$set": updates})
+    updated = await db.agenda.find_one({"id": agenda_id})
+    return Agenda(**serialize_doc(updated))
+
+
+@api_router.delete("/agenda/{agenda_id}")
+async def delete_agenda(agenda_id: str, _: dict = Depends(require_media_admin)):
+    result = await db.agenda.delete_one({"id": agenda_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Agenda tidak ditemukan")
+    return {"message": "Agenda berhasil dihapus"}
+
+
+# ---------------- Public Agenda (no auth) ----------------
+@api_router.get("/public/agenda", response_model=List[PublicAgenda])
+async def list_public_agenda():
+    docs = (
+        await db.agenda
+        .find({"is_active": True})
+        .sort("agenda_date", 1)
+        .to_list(100)
+    )
+    return [PublicAgenda(**serialize_doc(d)) for d in docs]
+
+
+# ---------------- Media Center ----------------
+@api_router.get("/media", response_model=List[MediaItem])
+async def list_media(_: dict = Depends(get_current_user)):
+    docs = await db.media.find({}).sort("created_at", -1).to_list(500)
+    return [MediaItem(**serialize_doc(d)) for d in docs]
+
+
+@api_router.post("/media-upload")
+async def upload_media_file(
+    media: UploadFile = File(...),
+    _: dict = Depends(require_media_admin),
+):
+    image_types = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+    }
+
+    video_types = {
+        "video/mp4": ".mp4",
+        "video/webm": ".webm",
+    }
+
+    content_type = media.content_type or ""
+
+    if content_type in image_types:
+        media_type = "image"
+        extension = image_types[content_type]
+        max_size = 5 * 1024 * 1024
+        max_size_label = "5 MB"
+    elif content_type in video_types:
+        media_type = "video"
+        extension = video_types[content_type]
+        max_size = 100 * 1024 * 1024
+        max_size_label = "100 MB"
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Format media harus JPG, PNG, WEBP, MP4, atau WEBM",
+        )
+
+    content = await media.read()
+
+    if len(content) > max_size:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ukuran {media_type} maksimal {max_size_label}",
+        )
+
+    filename = f"{uuid.uuid4().hex}{extension}"
+    destination = UPLOAD_MEDIA_DIR / filename
+    destination.write_bytes(content)
+
+    return {
+        "media_type": media_type,
+        "media_url": f"/api/uploads/media/{filename}",
+        "filename": filename,
+        "content_type": content_type,
+        "size": len(content),
+    }
+
+
+@api_router.post("/media-upload-multiple")
+async def upload_multiple_media_files(
+    files: List[UploadFile] = File(...),
+    _: dict = Depends(require_media_admin),
+):
+    if not files:
+        raise HTTPException(
+            status_code=400,
+            detail="Tidak ada file yang dipilih",
+        )
+
+    if len(files) > 30:
+        raise HTTPException(
+            status_code=400,
+            detail="Maksimal 30 file dalam sekali upload",
+        )
+
+    image_types = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+    }
+
+    video_types = {
+        "video/mp4": ".mp4",
+        "video/webm": ".webm",
+        "video/quicktime": ".mov",
+    }
+
+    max_image_size = 5 * 1024 * 1024
+    max_video_size = 150 * 1024 * 1024
+    max_total_size = 500 * 1024 * 1024
+
+    uploaded = []
+    rejected = []
+    total_size = 0
+
+    for media in files:
+        original_name = media.filename or "media"
+        content_type = media.content_type or ""
+
+        if content_type in image_types:
+            media_type = "image"
+            extension = image_types[content_type]
+            max_size = max_image_size
+            max_label = "5 MB"
+        elif content_type in video_types:
+            media_type = "video"
+            extension = video_types[content_type]
+            max_size = max_video_size
+            max_label = "150 MB"
+        else:
+            rejected.append({
+                "filename": original_name,
+                "reason": "Format tidak didukung",
+            })
+            continue
+
+        content = await media.read()
+        size = len(content)
+
+        if size == 0:
+            rejected.append({
+                "filename": original_name,
+                "reason": "File kosong",
+            })
+            continue
+
+        if size > max_size:
+            rejected.append({
+                "filename": original_name,
+                "reason": f"Ukuran maksimal {max_label}",
+            })
+            continue
+
+        if total_size + size > max_total_size:
+            rejected.append({
+                "filename": original_name,
+                "reason": "Batas total upload 500 MB terlampaui",
+            })
+            continue
+
+        filename = f"{uuid.uuid4().hex}{extension}"
+        destination = UPLOAD_MEDIA_DIR / filename
+        destination.write_bytes(content)
+
+        total_size += size
+
+        uploaded.append({
+            "original_name": original_name,
+            "filename": filename,
+            "media_type": media_type,
+            "media_url": f"/api/uploads/media/{filename}",
+            "content_type": content_type,
+            "size": size,
+        })
+
+    if not uploaded:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Tidak ada file yang berhasil diunggah",
+                "rejected": rejected,
+            },
+        )
+
+    return {
+        "message": "Upload dokumentasi selesai",
+        "uploaded_count": len(uploaded),
+        "rejected_count": len(rejected),
+        "total_size": total_size,
+        "uploaded": uploaded,
+        "rejected": rejected,
+    }
+
+
+@api_router.get("/media/{media_id}", response_model=MediaItem)
+async def get_media(media_id: str, _: dict = Depends(get_current_user)):
+    doc = await db.media.find_one({"id": media_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Media tidak ditemukan")
+    return MediaItem(**serialize_doc(doc))
+
+
+@api_router.post("/media", response_model=MediaItem)
+async def create_media(
+    payload: MediaPayload,
+    _: dict = Depends(require_media_admin),
+):
+    now = iso(now_utc())
+
+    new_media = {
+        "id": str(uuid.uuid4()),
+        "title": payload.title.strip(),
+        "description": payload.description.strip() if payload.description else None,
+        "media_type": payload.media_type,
+        "media_url": payload.media_url.strip(),
+        "thumbnail_url": (
+            payload.thumbnail_url.strip()
+            if payload.thumbnail_url
+            else None
+        ),
+        "event_date": payload.event_date,
+        "category": payload.category.strip() if payload.category else "Kegiatan",
+        "location": payload.location.strip() if payload.location else None,
+        "is_featured": payload.is_featured,
+        "is_published": payload.is_published,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.media.insert_one(new_media)
+    return MediaItem(**serialize_doc(new_media))
+
+
+@api_router.patch("/media/{media_id}", response_model=MediaItem)
+async def update_media(
+    media_id: str,
+    payload: MediaPayload,
+    _: dict = Depends(require_media_admin),
+):
+    doc = await db.media.find_one({"id": media_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Media tidak ditemukan")
+
+    updates = payload.model_dump()
+    updates["title"] = payload.title.strip()
+    updates["description"] = (
+        payload.description.strip()
+        if payload.description
+        else None
+    )
+    updates["media_url"] = payload.media_url.strip()
+    updates["thumbnail_url"] = (
+        payload.thumbnail_url.strip()
+        if payload.thumbnail_url
+        else None
+    )
+    updates["category"] = (
+        payload.category.strip()
+        if payload.category
+        else "Kegiatan"
+    )
+    updates["location"] = (
+        payload.location.strip()
+        if payload.location
+        else None
+    )
+    updates["updated_at"] = iso(now_utc())
+
+    await db.media.update_one(
+        {"id": media_id},
+        {"$set": updates},
+    )
+
+    updated = await db.media.find_one({"id": media_id})
+    return MediaItem(**serialize_doc(updated))
+
+
+@api_router.delete("/media/{media_id}")
+async def delete_media(
+    media_id: str,
+    _: dict = Depends(require_media_admin),
+):
+    result = await db.media.delete_one({"id": media_id})
+
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Media tidak ditemukan")
+
+    return {"message": "Media berhasil dihapus"}
+
+
+# ---------------- Public Media Center (no auth) ----------------
+@api_router.get("/public/media", response_model=List[PublicMediaItem])
+async def list_public_media():
+    docs = (
+        await db.media
+        .find({"is_published": True})
+        .sort("created_at", -1)
+        .to_list(100)
+    )
+    return [PublicMediaItem(**serialize_doc(d)) for d in docs]
+
+
+@api_router.get(
+    "/public/media/{media_id}",
+    response_model=PublicMediaItem,
+)
+async def get_public_media(media_id: str):
+    doc = await db.media.find_one({
+        "id": media_id,
+        "is_published": True,
+    })
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Media tidak ditemukan")
+
+    return PublicMediaItem(**serialize_doc(doc))
+
+
 # ---------------- Stats ----------------
 @api_router.get("/stats", response_model=Stats)
 async def get_stats(_: dict = Depends(get_current_user)):
@@ -624,7 +1099,7 @@ async def get_stats(_: dict = Depends(get_current_user)):
 
 
 @api_router.put("/stats", response_model=Stats)
-async def update_stats(payload: StatsPayload, _: dict = Depends(require_admin)):
+async def update_stats(payload: StatsPayload, _: dict = Depends(require_super_admin)):
     updates = payload.model_dump()
     updates['updated_at'] = iso(now_utc())
     await db.stats.update_one({"key": "global"}, {"$set": updates}, upsert=True)
@@ -640,7 +1115,7 @@ async def get_links(_: dict = Depends(get_current_user)):
 
 
 @api_router.put("/links", response_model=Links)
-async def update_links(payload: LinksPayload, _: dict = Depends(require_admin)):
+async def update_links(payload: LinksPayload, _: dict = Depends(require_super_admin)):
     updates = payload.model_dump()
     updates['updated_at'] = iso(now_utc())
     await db.links.update_one({"key": "global"}, {"$set": updates}, upsert=True)

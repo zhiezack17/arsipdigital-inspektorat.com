@@ -17,7 +17,8 @@ export const ProtectedRoute = ({ children, requireAdmin = false }) => {
     if (!user) {
         return <Navigate to="/login" replace state={{ from: location }} />;
     }
-    if (requireAdmin && user.role !== 'admin') {
+    const isAdmin = ['admin', 'super_admin', 'admin_media'].includes(user?.role);
+    if (requireAdmin && !isAdmin) {
         return <Navigate to="/dashboard" replace />;
     }
     return children;

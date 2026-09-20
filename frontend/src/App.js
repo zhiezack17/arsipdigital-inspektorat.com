@@ -11,6 +11,8 @@ import ProfilePage from '@/pages/Profile';
 import AdminLayout from '@/pages/admin/AdminLayout';
 import AdminUsersPage from '@/pages/admin/AdminUsers';
 import AdminNewsPage from '@/pages/admin/AdminNews';
+import AdminAgendaPage from '@/pages/admin/AdminAgenda';
+import AdminMediaPage from '@/pages/admin/AdminMedia';
 import AdminStatsPage from '@/pages/admin/AdminStats';
 import AdminLinksPage from '@/pages/admin/AdminLinks';
 import PublicHomePage from '@/pages/PublicHome';
@@ -48,9 +50,11 @@ function App() {
                             path="/admin"
                             element={<ProtectedRoute requireAdmin><AdminLayout /></ProtectedRoute>}
                         >
-                            <Route index element={<Navigate to="/admin/users" replace />} />
+                            <Route index element={<Navigate to="/admin/news" replace />} />
                             <Route path="users" element={<AdminUsersPage />} />
                             <Route path="news" element={<AdminNewsPage />} />
+                            <Route path="media" element={<AdminMediaPage />} />
+                            <Route path="agenda" element={<AdminAgendaPage />} />
                             <Route path="stats" element={<AdminStatsPage />} />
                             <Route path="links" element={<AdminLinksPage />} />
                         </Route>

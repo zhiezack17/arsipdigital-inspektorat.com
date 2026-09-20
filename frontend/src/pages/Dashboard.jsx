@@ -12,9 +12,10 @@ import { useAuth } from '@/context/AuthContext';
 import { api, extractErrorMessage } from '@/lib/api';
 import { APP_MENU, PORTAL_NAME, INSTITUTION_NAME } from '@/lib/branding';
 import { DASHBOARD } from '@/constants/testIds';
+import { Link } from 'react-router-dom';
 import {
     Inbox, Send, Archive, Users, Newspaper, ExternalLink, Clock, Sparkles,
-    ArrowRight, ChevronRight, CalendarDays,
+    ArrowRight, ChevronRight, CalendarDays, Shield,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -181,6 +182,14 @@ export default function DashboardPage() {
                                 Jelajahi Menu Aplikasi
                                 <ChevronRight className="h-4 w-4 ml-1" />
                             </Button>
+                            {['super_admin', 'admin', 'admin_media'].includes(user?.role) && (
+                                <Button asChild className="bg-[#0e6b3f] hover:bg-[#075a34] text-white font-semibold shadow-sm">
+                                    <Link to="/admin/news">
+                                        <Shield className="h-4 w-4 mr-2 text-[#f5c451]" />
+                                        Kelola Berita & Galeri Foto
+                                    </Link>
+                                </Button>
+                            )}
                         </div>
                     </motion.div>
                 </div>

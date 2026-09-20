@@ -177,9 +177,9 @@ const GreenNavBar = ({ user, links, onLogout, mobileMenuOpen, closeMobileMenu, o
                         <Newspaper className="h-4 w-4" /> Pengumuman
                     </a>
 
-                    {user?.role === 'admin' && (
+                    {['admin', 'super_admin', 'admin_media'].includes(user?.role) && (
                         <NavLink
-                            to="/admin/users"
+                            to="/admin/news"
                             className={() => [
                                 'inline-flex items-center gap-2 px-3.5 py-3 text-sm font-medium transition-colors border-b-2',
                                 isAdminSection ? 'text-white border-[#f5c451] bg-[#075a34]' : 'text-white/90 border-transparent hover:bg-[#075a34] hover:text-white',
@@ -274,8 +274,8 @@ const GreenNavBar = ({ user, links, onLogout, mobileMenuOpen, closeMobileMenu, o
                         >
                             <span className="inline-flex items-center gap-2"><Newspaper className="h-4 w-4" /> Pengumuman</span>
                         </button>
-                        {user?.role === 'admin' && (
-                            <NavLink to="/admin/users" className={MOBILE_LINK_CLS} onClick={closeMobileMenu}>
+                        {['admin', 'super_admin', 'admin_media'].includes(user?.role) && (
+                            <NavLink to="/admin/news" className={MOBILE_LINK_CLS} onClick={closeMobileMenu}>
                                 <span className="inline-flex items-center gap-2"><Shield className="h-4 w-4" /> Panel Admin</span>
                             </NavLink>
                         )}
